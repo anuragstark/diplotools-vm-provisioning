@@ -19,7 +19,7 @@ services:
 
   # 2. Backend Services
   backend-a:
-    image: ${ECR_REGISTRY}/ironman-app:${IMAGE_TAG}
+    image: ${ECR_REGISTRY}/ironman-app-${ENV_NAME:-dev}:${IMAGE_TAG}
     environment:
       - SERVICE_NAME=Backend-A
       - ENVIRONMENT=${ENVIRONMENT:-dev}
@@ -29,7 +29,7 @@ services:
       - app_network
 
   backend-b:
-    image: ${ECR_REGISTRY}/ironman-app:${IMAGE_TAG}
+    image: ${ECR_REGISTRY}/ironman-app-${ENV_NAME:-dev}:${IMAGE_TAG}
     environment:
       - SERVICE_NAME=Backend-B
       - ENVIRONMENT=${ENVIRONMENT:-dev}
@@ -38,7 +38,7 @@ services:
       - app_network
 
   backend-c:
-    image: ${ECR_REGISTRY}/ironman-app:${IMAGE_TAG}
+    image: ${ECR_REGISTRY}/ironman-app-${ENV_NAME:-dev}:${IMAGE_TAG}
     environment:
       - SERVICE_NAME=Backend-C
       - ENVIRONMENT=${ENVIRONMENT:-dev}

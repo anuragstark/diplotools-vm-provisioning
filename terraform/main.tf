@@ -4,8 +4,9 @@ provider "aws" {
 
 # 1. The ECR Repository for the Docker images
 resource "aws_ecr_repository" "app_repo" {
-  name                 = "ironman-app"
+  name                 = "ironman-app-${var.environment}"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
