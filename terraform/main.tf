@@ -6,6 +6,7 @@ provider "aws" {
 resource "aws_ecr_repository" "app_repo" {
   name                 = "ironman-app"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -80,7 +81,7 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   # This reads our cloud-init file from the outer directory!
-  user_data = file("${path.module}/../cloud-init/${var.environment}.yml")
+  user_data = try(file("${path.module}/../cloud-init/${var.environment}.yml"), "")
 
   tags = {
     Name = "ironman-app-server-${var.environment}"
