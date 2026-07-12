@@ -3,6 +3,9 @@ set -euo pipefail
 
 echo "Starting application bootstrap..."
 
+# Ensure secrets directory exists (since /run is wiped on reboot)
+mkdir -p /run/secrets
+
 # Fetch runtime secrets (Dummy commands, simulating AWS SSM)
 # In real life: aws ssm get-parameter --name "/myplatform/${ENVIRONMENT}/db_password" --with-decryption ...
 echo "DB_PASSWORD=supersecret_from_ssm" > /run/secrets/env_secrets
