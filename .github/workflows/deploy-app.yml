@@ -53,10 +53,6 @@ jobs:
           # Build a docker container and push it to ECR
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          # Also tag as the environment 'latest' for the compose file to easily pull
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:${ENV_NAME}-latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${ENV_NAME}-latest
 
       - name: Get EC2 Instance ID by Tag
         id: get-ec2
@@ -67,11 +63,30 @@ jobs:
             --output text)
           echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
 
-      - name: Deploy via AWS Systems Manager (SSM)
+      - name: Sync Orchestration Files via SSM
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Send the command to the EC2 instance securely without SSH
+          # Base64 encode the files to avoid JSON string escaping issues
+          COMPOSE_B64=$(base64 -w 0 docker-compose.yml)
+          NGINX_B64=$(base64 -w 0 nginx.conf)
+          BOOTSTRAP_B64=$(base64 -w 0 scripts/bootstrap-app.sh)
+          
+          # Send the command to decode and run
           aws ssm send-command \
             --instance-ids "${INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
-            --parameters '{"commands":["/usr/local/bin/bootstrap-app.sh"]}' \
+            --parameters '{"commands":[
+              "mkdir -p /opt/myplatform",
+              "echo '"$COMPOSE_B64"' | base64 -d > /opt/myplatform/docker-compose.yml",
+              "echo '"$NGINX_B64"' | base64 -d > /opt/myplatform/nginx.conf",
+              "echo '"$BOOTSTRAP_B64"' | base64 -d > /usr/local/bin/bootstrap-app.sh",
+              "chmod +x /usr/local/bin/bootstrap-app.sh",
+              "echo ECR_REGISTRY=''"${ECR_REGISTRY}"'' > /opt/myplatform/.env",
+              "echo IMAGE_TAG=''"${IMAGE_TAG}"'' >> /opt/myplatform/.env",
+              "export ECR_REGISTRY=''"${ECR_REGISTRY}"''",
+              "export IMAGE_TAG=''"${IMAGE_TAG}"''",
+              "/usr/local/bin/bootstrap-app.sh"
+            ]}' \
             --timeout-seconds 120
