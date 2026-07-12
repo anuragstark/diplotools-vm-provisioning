@@ -1,0 +1,59 @@
+name: Destroy Infrastructure (Terraform)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy (dev or staging)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+      confirm_delete:
+        description: 'Type "delete" exactly to confirm destruction'
+        required: true
+        type: string
+
+jobs:
+  destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Verify Confirmation
+        run: |
+          if [[ "${{ github.event.inputs.confirm_delete }}" != "delete" ]]; then
+            echo "ERROR: Destruction aborted. You must type 'delete' in the confirmation box."
+            exit 1
+          fi
+          echo "Confirmation received. Proceeding with destruction of ${{ github.event.inputs.environment }}..."
+
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        
+      - name: Terraform Init
+        working-directory: ./vm-provisioning/terraform
+        run: terraform init
+
+      - name: Terraform Workspace Select
+        working-directory: ./vm-provisioning/terraform
+        run: terraform workspace select ${{ github.event.inputs.environment }}
+
+      - name: Terraform Destroy
+        working-directory: ./vm-provisioning/terraform
+        run: terraform destroy -var="environment=${{ github.event.inputs.environment }}" -auto-approve
