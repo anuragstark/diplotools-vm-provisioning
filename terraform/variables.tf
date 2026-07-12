@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "The AWS region to deploy in"
   type        = string
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "environment" {
@@ -17,7 +17,7 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "Ubuntu 22.04 LTS AMI ID for eu-central-1"
+  description = "Ubuntu 22.04 LTS AMI ID for us-east-1"
   type        = string
-  default     = "ami-0abcdef1234567890" # Example dummy ID
+  default     = "ami-0e1bed4f06a3b463d" # Real Ubuntu 22.04 AMI in us-east-1
 }
