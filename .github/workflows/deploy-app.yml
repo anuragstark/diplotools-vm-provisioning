@@ -73,20 +73,26 @@ jobs:
           NGINX_B64=$(base64 -w 0 nginx.conf)
           BOOTSTRAP_B64=$(base64 -w 0 scripts/bootstrap-app.sh)
           
-          # Send the command to decode and run
+          # Send the command to decode and run using a clean JSON payload file
+          cat <<EOF > ssm_payload.json
+          {
+            "commands": [
+              "mkdir -p /opt/myplatform",
+              "echo $COMPOSE_B64 | base64 -d > /opt/myplatform/docker-compose.yml",
+              "echo $NGINX_B64 | base64 -d > /opt/myplatform/nginx.conf",
+              "echo $BOOTSTRAP_B64 | base64 -d > /usr/local/bin/bootstrap-app.sh",
+              "chmod +x /usr/local/bin/bootstrap-app.sh",
+              "echo ECR_REGISTRY=${ECR_REGISTRY} > /opt/myplatform/.env",
+              "echo IMAGE_TAG=${IMAGE_TAG} >> /opt/myplatform/.env",
+              "export ECR_REGISTRY=${ECR_REGISTRY}",
+              "export IMAGE_TAG=${IMAGE_TAG}",
+              "/usr/local/bin/bootstrap-app.sh"
+            ]
+          }
+          EOF
+          
           aws ssm send-command \
             --instance-ids "${INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
-            --parameters '{"commands":[
-              "mkdir -p /opt/myplatform",
-              "echo '"$COMPOSE_B64"' | base64 -d > /opt/myplatform/docker-compose.yml",
-              "echo '"$NGINX_B64"' | base64 -d > /opt/myplatform/nginx.conf",
-              "echo '"$BOOTSTRAP_B64"' | base64 -d > /usr/local/bin/bootstrap-app.sh",
-              "chmod +x /usr/local/bin/bootstrap-app.sh",
-              "echo ECR_REGISTRY=''"${ECR_REGISTRY}"'' > /opt/myplatform/.env",
-              "echo IMAGE_TAG=''"${IMAGE_TAG}"'' >> /opt/myplatform/.env",
-              "export ECR_REGISTRY=''"${ECR_REGISTRY}"''",
-              "export IMAGE_TAG=''"${IMAGE_TAG}"''",
-              "/usr/local/bin/bootstrap-app.sh"
-            ]}' \
+            --parameters file://ssm_payload.json \
             --timeout-seconds 120
