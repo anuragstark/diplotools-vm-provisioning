@@ -1,12 +1,13 @@
 name: Deploy Infrastructure (Terraform)
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
       - dev
     paths:
-      - 'vm-provisioning/terraform/**'
+      - 'terraform/**'
 
 jobs:
   terraform:
@@ -32,7 +33,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         
       - name: Terraform Init
-        working-directory: ./vm-provisioning/terraform
+        working-directory: ./terraform
         run: terraform init
 
       - name: Set Terraform Workspace
@@ -44,14 +45,14 @@ jobs:
           fi
 
       - name: Terraform Workspace setup
-        working-directory: ./vm-provisioning/terraform
+        working-directory: ./terraform
         run: |
           terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
 
       - name: Terraform Plan
-        working-directory: ./vm-provisioning/terraform
+        working-directory: ./terraform
         run: terraform plan -var="environment=$WORKSPACE" -out=tfplan
 
       - name: Terraform Apply
-        working-directory: ./vm-provisioning/terraform
+        working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
