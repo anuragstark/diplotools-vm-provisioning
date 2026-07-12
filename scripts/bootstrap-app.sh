@@ -10,7 +10,14 @@ chmod 600 /run/secrets/env_secrets
 
 echo "Secrets fetched securely."
 
+# Authenticate with ECR
+echo "Authenticating with AWS ECR..."
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
 # Pull latest images based on docker-compose
 docker compose -f /opt/myplatform/docker-compose.yml pull
+
+# Start or restart containers dynamically
+docker compose -f /opt/myplatform/docker-compose.yml up -d
 
 echo "Bootstrap complete."
