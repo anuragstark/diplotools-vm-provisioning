@@ -82,6 +82,7 @@ resource "aws_instance" "app_server" {
 
   # This reads our cloud-init file from the outer directory!
   user_data = file("${path.module}/../cloud-init/${var.environment}.yml")
+  user_data_replace_on_change = true
 
   tags = {
     Name = "ironman-app-server-${var.environment}"
