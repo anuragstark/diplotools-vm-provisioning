@@ -19,6 +19,8 @@ packages:
   - curl
   - jq
   - ufw
+  - awscli
+  - docker-compose-v2
   - certbot # Used for Option 1: Nginx Auto-SSL Generation
 
 write_files:
