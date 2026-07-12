@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # 1. Reverse Proxy
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend-a
+      - backend-b
+      - backend-c
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # 2. Backend Services
+  backend-a:
+    build: ./app
+    environment:
+      - SERVICE_NAME=Backend-A
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+      - DB_PASSWORD=${DB_PASSWORD} # Injected from SSM via bootstrap script
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  backend-b:
+    build: ./app
+    environment:
+      - SERVICE_NAME=Backend-B
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  backend-c:
+    build: ./app
+    environment:
+      - SERVICE_NAME=Backend-C
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # 3. Worker Service
+  worker:
+    image: alpine:latest
+    # Dummy worker that just logs a message every 10 seconds
+    command: /bin/sh -c "while true; do echo 'Worker processing queue...'; sleep 10; done"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+      - DB_PASSWORD=${DB_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  # 4. Monitoring / Log Collection
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    network_mode: "host" # Needs host network to monitor the host VM
+
+networks:
+  app_network:
+    driver: bridge

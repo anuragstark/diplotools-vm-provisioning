@@ -1,0 +1,52 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+groups:
+  - docker
+  - app
+
+users:
+  - name: deploy
+    groups: [sudo, docker, app]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...dummykey...
+
+packages:
+  - docker.io
+  - curl
+  - jq
+  - ufw
+
+write_files:
+  - path: /etc/myplatform/env
+    permissions: "0640"
+    owner: root:app
+    content: |
+      ENVIRONMENT=staging
+      APP_NAMESPACE=myplatform
+
+runcmd:
+  # Create directories
+  - mkdir -p /opt/myplatform /run/secrets
+  - chown -R deploy:app /opt/myplatform
+  
+  # Firewall Setup
+  - ufw allow OpenSSH
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  
+  # Enable and Start Docker
+  - systemctl enable docker
+  - systemctl start docker
+  
+  # The actual files (docker-compose.yml, bootstrap-app.sh, myplatform.service)
+  # would typically be copied here via terraform file provisioner, baked into an AMI, 
+  # or pulled from a git repository during this cloud-init phase.
+  
+  # Finally, enable the systemd service to start the app
+  # - systemctl enable myplatform.service
+  # - systemctl start myplatform.service

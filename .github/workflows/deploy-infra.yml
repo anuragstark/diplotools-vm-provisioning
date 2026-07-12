@@ -1,0 +1,57 @@
+name: Deploy Infrastructure (Terraform)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'vm-provisioning/terraform/**'
+
+jobs:
+  terraform:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    
+    # Needs permissions to use OIDC to auth with AWS
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        
+      - name: Terraform Init
+        working-directory: ./vm-provisioning/terraform
+        run: terraform init
+
+      - name: Set Terraform Workspace
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "WORKSPACE=staging" >> $GITHUB_ENV
+          else
+            echo "WORKSPACE=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Terraform Workspace setup
+        working-directory: ./vm-provisioning/terraform
+        run: |
+          terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
+
+      - name: Terraform Plan
+        working-directory: ./vm-provisioning/terraform
+        run: terraform plan -var="environment=$WORKSPACE" -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./vm-provisioning/terraform
+        run: terraform apply -auto-approve tfplan

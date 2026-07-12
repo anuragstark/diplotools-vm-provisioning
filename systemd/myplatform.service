@@ -1,0 +1,21 @@
+[Unit]
+Description=MyPlatform Application Stack
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/myplatform
+EnvironmentFile=/etc/myplatform/env
+EnvironmentFile=/run/secrets/env_secrets
+
+# Pull images and start the compose stack
+ExecStartPre=/usr/local/bin/bootstrap-app.sh
+ExecStart=/usr/bin/docker compose up -d
+
+# Stop the compose stack on service stop
+ExecStop=/usr/bin/docker compose down
+
+[Install]
+WantedBy=multi-user.target
