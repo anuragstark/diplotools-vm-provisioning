@@ -56,3 +56,12 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform
         run: terraform apply -auto-approve tfplan
+
+      - name: Print EC2 Public IP
+        working-directory: ./terraform
+        run: |
+          echo "=========================================================="
+          echo "Infrastructure successfully deployed!"
+          echo "Open this IP in your browser: http://$(terraform output -raw ec2_public_ip)"
+          echo "=========================================================="
+          echo "Note: It may take 2-3 minutes for cloud-init to finish installing Docker and starting Nginx on the first boot."
