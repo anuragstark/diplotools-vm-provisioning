@@ -3,6 +3,20 @@ set -euo pipefail
 
 echo "Starting application bootstrap..."
 
+echo "Waiting for Docker to be installed by cloud-init..."
+while ! command -v docker &> /dev/null; do
+  echo "Docker not found yet. Sleeping for 5s..."
+  sleep 5
+done
+
+echo "Waiting for Docker daemon to be ready..."
+until docker info > /dev/null 2>&1; do
+  echo "Docker daemon not ready yet. Sleeping for 5s..."
+  sleep 5
+done
+
+echo "Docker is fully ready. Proceeding with deployment!"
+
 # Load environment variables written by SSM deploy step
 if [ -f /opt/myplatform/.env ]; then
   set -o allexport
