@@ -40,7 +40,11 @@ datasources:
 EOF
 
 
+
 # Start the Platform
+
+echo "Authenticating with ECR..."
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
 
 echo "Starting Docker Compose services..."
 
