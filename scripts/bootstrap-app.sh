@@ -13,6 +13,15 @@ fi
 # Ensure secrets directory exists (since /run is wiped on reboot)
 mkdir -p /run/secrets
 
+# Install Docker Compose V2 if missing (self-healing for existing instances)
+if ! docker compose version &>/dev/null; then
+  echo "Docker Compose V2 not found. Installing..."
+  apt-get install -y docker-compose-v2 || \
+  curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+    -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
+  echo "Docker Compose V2 installed."
+fi
+
 # Fetch runtime secrets (Dummy commands, simulating AWS SSM)
 # In real life: aws ssm get-parameter --name "/myplatform/${ENVIRONMENT}/db_password" --with-decryption ...
 echo "DB_PASSWORD=supersecret_from_ssm" > /run/secrets/env_secrets
