@@ -79,7 +79,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment:
-      - GF_SERVER_ROOT_URL=/grafana/
+      - GF_SERVER_ROOT_URL=http://${PUBLIC_IP}/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
       - prometheus

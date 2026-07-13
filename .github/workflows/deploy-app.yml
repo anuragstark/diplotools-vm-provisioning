@@ -54,14 +54,21 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Get EC2 Instance ID by Tag
+      - name: Get EC2 Instance Details
         id: get-ec2
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=${EC2_TAG}" "Name=instance-state-name,Values=running" \
             --query "Reservations[0].Instances[0].InstanceId" \
             --output text)
+            
+          PUBLIC_IP=$(aws ec2 describe-instances \
+            --instance-ids $INSTANCE_ID \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text)
+            
           echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Sync Orchestration Files via SSM
         env:
@@ -87,6 +94,7 @@ jobs:
               "echo ECR_REGISTRY=${ECR_REGISTRY} > /opt/myplatform/.env",
               "echo IMAGE_TAG=${IMAGE_TAG} >> /opt/myplatform/.env",
               "echo ENV_NAME=${{ env.ENV_NAME }} >> /opt/myplatform/.env",
+              "echo PUBLIC_IP=${{ env.PUBLIC_IP }} >> /opt/myplatform/.env",
               "/usr/local/bin/bootstrap-app.sh"
             ]
           }
