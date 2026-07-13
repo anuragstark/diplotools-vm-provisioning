@@ -81,8 +81,12 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   # This reads our cloud-init file from the outer directory!
+<<<<<<< HEAD
   user_data = file("${path.module}/../cloud-init/${var.environment}.yml")
   user_data_replace_on_change = true
+=======
+  user_data = try(file("${path.module}/../cloud-init/${var.environment}.yml"), "")
+>>>>>>> main
 
   tags = {
     Name = "ironman-app-server-${var.environment}"

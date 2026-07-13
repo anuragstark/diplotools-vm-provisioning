@@ -72,6 +72,7 @@ jobs:
           COMPOSE_B64=$(base64 -w 0 docker-compose.yml)
           NGINX_B64=$(base64 -w 0 nginx.conf)
           BOOTSTRAP_B64=$(base64 -w 0 scripts/bootstrap-app.sh)
+          PROM_B64=$(base64 -w 0 prometheus.yml)
           
           # Send the command to decode and run using a clean JSON payload file
           cat <<EOF > ssm_payload.json
@@ -80,6 +81,7 @@ jobs:
               "mkdir -p /opt/myplatform",
               "echo $COMPOSE_B64 | base64 -d > /opt/myplatform/docker-compose.yml",
               "echo $NGINX_B64 | base64 -d > /opt/myplatform/nginx.conf",
+              "echo $PROM_B64 | base64 -d > /opt/myplatform/prometheus.yml",
               "echo $BOOTSTRAP_B64 | base64 -d > /usr/local/bin/bootstrap-app.sh",
               "chmod +x /usr/local/bin/bootstrap-app.sh",
               "echo ECR_REGISTRY=${ECR_REGISTRY} > /opt/myplatform/.env",
