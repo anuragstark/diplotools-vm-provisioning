@@ -87,9 +87,6 @@ jobs:
               "echo ECR_REGISTRY=${ECR_REGISTRY} > /opt/myplatform/.env",
               "echo IMAGE_TAG=${IMAGE_TAG} >> /opt/myplatform/.env",
               "echo ENV_NAME=${{ env.ENV_NAME }} >> /opt/myplatform/.env",
-              "export ECR_REGISTRY=${ECR_REGISTRY}",
-              "export IMAGE_TAG=${IMAGE_TAG}",
-              "export ENV_NAME=${{ env.ENV_NAME }}",
               "/usr/local/bin/bootstrap-app.sh"
             ]
           }

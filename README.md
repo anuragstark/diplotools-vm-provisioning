@@ -28,18 +28,6 @@ To understand how a user request reaches the application, here is the exact traf
 
 ---
 
-## Request Flow & Nginx Reverse Proxy
-
-To understand how a user request reaches the application, here is the exact traffic flow:
-
-1. **User Request**: A user enters the EC2 instance's Public IP address (or domain name) into their browser.
-2. **AWS Security Group**: The request hits the AWS EC2 Security Group. The firewall rules explicitly allow inbound traffic *only* on port `80` (HTTP) and `443` (HTTPS). All other ports (including SSH on port `22`) are strictly blocked.
-3. **Nginx Reverse Proxy**: The request reaches the Docker Compose network, where the Nginx container is listening on port `80`. Nginx acts as the entry point (reverse proxy) for all traffic.
-4. **Load Balancing**: Nginx receives the request and proxies it to the backend Node.js containers (`backend-a`, `backend-b`, `backend-c`). Because Nginx is defined in the same Docker network (`app_network`), it natively load-balances requests across these three containers in a round-robin fashion.
-5. **Application Response**: The backend container processes the request, injects its specific container ID/name into the HTML response, and sends it back through Nginx to the user's browser.
-
----
-
 ## Security & Environment Isolation
 
 ### Strict IAM Boundaries
@@ -52,6 +40,31 @@ The architecture supports completely isolated environments (e.g., `staging` and 
 - **Terraform Workspaces**: Infrastructure is separated into Terraform Workspaces (`staging` vs `dev`).
 - **ECR Isolation**: Docker images are pushed to explicitly namespaced repositories (`ironman-app-staging`, `ironman-app-dev`) to guarantee that a bad push to a lower environment cannot overwrite production images.
 - **Dynamic Configuration**: `docker-compose.yml` uses environment variable interpolation (`${ENV_NAME}`) to seamlessly adapt to its deployed environment.
+
+### Troubleshooting (No SSH Required)
+Even though Port 22 is blocked, you can still securely troubleshoot the EC2 instance using **AWS SSM Session Manager**.
+
+*Note: If using the CLI on a Mac, you must first install the SSM plugin: `brew install --cask session-manager-plugin`*
+
+If you only have the IP address, you can find your Instance ID by running:
+```bash
+aws ec2 describe-instances \
+  --filters "Name=ip-address,Values=<YOUR_EC2_IP>" \
+  --query "Reservations[*].Instances[*].InstanceId" \
+  --output text
+```
+
+- **Interactive Shell**: You can drop into a live, secure bash terminal directly from your browser by navigating to the **AWS EC2 Console -> Connect -> Session Manager**. Alternatively, run this from your terminal using the AWS CLI:
+  ```bash
+  aws ssm start-session --target <YOUR_EC2_INSTANCE_ID>
+  ```
+- **One-Off Commands**: If you just need to grab logs without opening a shell, you can send remote commands via SSM:
+  ```bash
+  aws ssm send-command \
+    --instance-ids "<YOUR_EC2_INSTANCE_ID>" \
+    --document-name "AWS-RunShellScript" \
+    --parameters 'commands=["docker logs proxy --tail 50"]'
+  ```
 
 ---
 

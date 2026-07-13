@@ -3,6 +3,13 @@ set -euo pipefail
 
 echo "Starting application bootstrap..."
 
+# Load environment variables written by SSM deploy step
+if [ -f /opt/myplatform/.env ]; then
+  set -o allexport
+  source /opt/myplatform/.env
+  set +o allexport
+fi
+
 # Ensure secrets directory exists (since /run is wiped on reboot)
 mkdir -p /run/secrets
 
