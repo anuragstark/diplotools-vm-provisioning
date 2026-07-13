@@ -61,10 +61,17 @@ services:
   # 4. Monitoring / Log Collection
   node-exporter:
     image: prom/node-exporter:latest
-    ports:
-      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     restart: unless-stopped
-    network_mode: "host" # Needs host network to monitor the host VM
+    networks:
+      - app_network
 
   prometheus:
     image: prom/prometheus:latest
@@ -79,10 +86,12 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment:
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_ROOT_URL=http://${PUBLIC_IP}/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
       - prometheus
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
     restart: unless-stopped
     networks:
       - app_network
