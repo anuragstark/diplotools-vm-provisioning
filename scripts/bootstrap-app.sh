@@ -22,6 +22,28 @@ if ! docker compose version &>/dev/null; then
   echo "Docker Compose V2 installed."
 fi
 
+
+# Grafana Provisioning (Datasources)
+
+echo "Configuring Grafana Provisioning..."
+mkdir -p /opt/myplatform/grafana/provisioning/datasources
+
+cat << 'EOF' > /opt/myplatform/grafana/provisioning/datasources/prometheus.yml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+EOF
+
+
+# Start the Platform
+
+echo "Starting Docker Compose services..."
+
 # Fetch runtime secrets (Dummy commands, simulating AWS SSM)
 # In real life: aws ssm get-parameter --name "/myplatform/${ENVIRONMENT}/db_password" --with-decryption ...
 echo "DB_PASSWORD=supersecret_from_ssm" > /run/secrets/env_secrets
